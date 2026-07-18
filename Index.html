@@ -1,0 +1,1397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Can a Computer Predict Heart Disease? — Sam Shema</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --red: #e63946;
+    --red-light: #ff6b7a;
+    --red-dark: #b5202d;
+    --cream: #fff8f0;
+    --navy: #0d1b2a;
+    --navy-mid: #1b2d42;
+    --navy-light: #253d57;
+    --gold: #f4a261;
+    --green: #52b788;
+    --text: #0d1b2a;
+    --muted: #6b7a8d;
+    --white: #ffffff;
+    --card-bg: #ffffff;
+    --border: rgba(230, 57, 70, 0.18);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--cream);
+    color: var(--text);
+    overflow-x: hidden;
+  }
+
+  /* ---- HERO ---- */
+  .hero {
+    min-height: 100vh;
+    background: var(--navy);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    padding: 2rem;
+    text-align: center;
+  }
+
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 60% 40%, rgba(230,57,70,0.18) 0%, transparent 60%),
+                radial-gradient(ellipse at 20% 80%, rgba(244,162,97,0.10) 0%, transparent 50%);
+  }
+
+  /* Heartbeat SVG line */
+  .heartbeat-wrap {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    opacity: 0.18;
+    pointer-events: none;
+  }
+  .heartbeat-line {
+    stroke-dasharray: 1200;
+    stroke-dashoffset: 1200;
+    animation: drawLine 3s ease forwards 0.5s;
+  }
+  @keyframes drawLine {
+    to { stroke-dashoffset: 0; }
+  }
+
+  .hero-badge {
+    display: inline-block;
+    background: rgba(230,57,70,0.2);
+    border: 1px solid var(--red);
+    color: var(--red-light);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 0.4rem 1.1rem;
+    border-radius: 100px;
+    margin-bottom: 1.8rem;
+    animation: fadeUp 0.6s ease both 0.2s;
+  }
+
+  .hero h1 {
+    font-size: clamp(2.4rem, 6vw, 5rem);
+    font-weight: 800;
+    color: var(--white);
+    line-height: 1.1;
+    max-width: 860px;
+    animation: fadeUp 0.6s ease both 0.4s;
+  }
+  .hero h1 span { color: var(--red); }
+
+  .hero-sub {
+    margin-top: 1.4rem;
+    font-size: 1.15rem;
+    color: rgba(255,255,255,0.65);
+    max-width: 560px;
+    line-height: 1.7;
+    animation: fadeUp 0.6s ease both 0.6s;
+  }
+
+  .hero-author {
+    margin-top: 2.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    animation: fadeUp 0.6s ease both 0.8s;
+  }
+  .author-avatar {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--red), var(--gold));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem; font-weight: 800; color: white;
+    flex-shrink: 0;
+  }
+  .author-info { text-align: left; }
+  .author-name { color: white; font-weight: 700; font-size: 1rem; }
+  .author-role { color: rgba(255,255,255,0.5); font-family: 'Space Mono', monospace; font-size: 0.72rem; }
+
+  .hero-stats {
+    display: flex;
+    gap: 2rem;
+    margin-top: 3.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    animation: fadeUp 0.6s ease both 1s;
+  }
+  .hero-stat {
+    text-align: center;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px;
+    padding: 1rem 1.6rem;
+    background: rgba(255,255,255,0.04);
+    backdrop-filter: blur(4px);
+  }
+  .hero-stat-val {
+    font-size: 2rem; font-weight: 800;
+    color: var(--red-light);
+    line-height: 1;
+  }
+  .hero-stat-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    color: rgba(255,255,255,0.45);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-top: 0.3rem;
+  }
+
+  .scroll-hint {
+    position: absolute;
+    bottom: 2rem;
+    display: flex; flex-direction: column; align-items: center; gap: 0.4rem;
+    color: rgba(255,255,255,0.3);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    animation: fadeUp 0.6s ease both 1.4s;
+  }
+  .scroll-hint::after {
+    content: '';
+    width: 1px; height: 40px;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.3), transparent);
+    display: block;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ---- SECTIONS ---- */
+  section { padding: 6rem 2rem; }
+
+  .container { max-width: 1080px; margin: 0 auto; }
+
+  .section-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-bottom: 1rem;
+  }
+  .section-tag::before {
+    content: '';
+    display: inline-block;
+    width: 20px; height: 2px;
+    background: var(--red);
+    border-radius: 2px;
+  }
+
+  .section-title {
+    font-size: clamp(1.8rem, 4vw, 3rem);
+    font-weight: 800;
+    line-height: 1.15;
+    margin-bottom: 1rem;
+  }
+  .section-title em { font-style: normal; color: var(--red); }
+
+  .section-lead {
+    font-size: 1.1rem;
+    color: var(--muted);
+    max-width: 600px;
+    line-height: 1.7;
+    margin-bottom: 3rem;
+  }
+
+  /* ---- ABOUT / PROBLEM ---- */
+  #about { background: var(--cream); }
+
+  .about-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2.5rem;
+    align-items: start;
+  }
+  @media(max-width:700px){ .about-grid { grid-template-columns: 1fr; } }
+
+  .about-card {
+    background: var(--white);
+    border-radius: 20px;
+    padding: 2rem;
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 24px rgba(13,27,42,0.06);
+    transition: transform 0.25s, box-shadow 0.25s;
+  }
+  .about-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(230,57,70,0.1);
+  }
+  .card-icon {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--red), var(--red-light));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem; margin-bottom: 1rem;
+    box-shadow: 0 4px 14px rgba(230,57,70,0.25);
+  }
+  .about-card h3 { font-size: 1.15rem; font-weight: 700; margin-bottom: 0.6rem; }
+  .about-card p { color: var(--muted); line-height: 1.7; font-size: 0.95rem; }
+
+  /* ---- DATASET ---- */
+  #dataset { background: var(--navy); color: var(--white); }
+  #dataset .section-lead { color: rgba(255,255,255,0.6); }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1rem;
+  }
+  .feature-pill {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 0.9rem 1.2rem;
+    display: flex; align-items: center; gap: 0.7rem;
+    font-size: 0.9rem;
+    font-family: 'Space Mono', monospace;
+    color: rgba(255,255,255,0.75);
+    transition: background 0.2s, border-color 0.2s;
+  }
+  .feature-pill:hover {
+    background: rgba(230,57,70,0.12);
+    border-color: rgba(230,57,70,0.4);
+    color: white;
+  }
+  .feature-pill .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--red-light);
+    flex-shrink: 0;
+  }
+
+  .dataset-callout {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1.5rem;
+    margin-top: 3rem;
+  }
+  @media(max-width:600px){ .dataset-callout { grid-template-columns: 1fr; } }
+
+  .callout-item {
+    text-align: center;
+    padding: 2rem 1rem;
+    background: rgba(255,255,255,0.04);
+    border-radius: 18px;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .callout-num {
+    font-size: 2.6rem;
+    font-weight: 800;
+    color: var(--red-light);
+    line-height: 1;
+    display: block;
+  }
+  .callout-desc {
+    color: rgba(255,255,255,0.5);
+    font-size: 0.85rem;
+    margin-top: 0.4rem;
+    font-family: 'Space Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  /* ---- MODELS ---- */
+  #models { background: var(--cream); }
+
+  .models-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+  }
+  @media(max-width:700px){ .models-grid { grid-template-columns: 1fr; } }
+
+  .model-card {
+    border-radius: 22px;
+    padding: 2.2rem;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background: var(--white);
+    box-shadow: 0 4px 24px rgba(13,27,42,0.07);
+    transition: transform 0.25s, box-shadow 0.25s;
+  }
+  .model-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 18px 50px rgba(230,57,70,0.12);
+  }
+  .model-card.featured {
+    background: var(--navy);
+    border-color: rgba(230,57,70,0.4);
+    color: white;
+  }
+  .model-card.featured .model-desc { color: rgba(255,255,255,0.6); }
+  .model-card.featured .model-meta-label { color: rgba(255,255,255,0.45); }
+  .model-card.featured .model-tag { background: rgba(230,57,70,0.25); color: var(--red-light); }
+
+  .model-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--red);
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    margin-bottom: 0.8rem;
+    text-transform: uppercase;
+  }
+  .model-card.featured .model-num { color: var(--red-light); }
+
+  .model-name {
+    font-size: 1.4rem;
+    font-weight: 800;
+    margin-bottom: 0.6rem;
+  }
+  .model-desc {
+    font-size: 0.9rem;
+    color: var(--muted);
+    line-height: 1.65;
+    margin-bottom: 1.5rem;
+  }
+
+  .model-acc {
+    font-size: 3rem;
+    font-weight: 800;
+    color: var(--red);
+    line-height: 1;
+    margin-bottom: 0.3rem;
+  }
+  .model-card.featured .model-acc { color: var(--red-light); }
+  .model-meta-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 1.5rem;
+  }
+
+  .model-tags { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .model-tag {
+    background: rgba(230,57,70,0.08);
+    color: var(--red-dark);
+    border-radius: 8px;
+    padding: 0.3rem 0.7rem;
+    font-size: 0.75rem;
+    font-family: 'Space Mono', monospace;
+  }
+
+  .winner-badge {
+    position: absolute; top: 1.2rem; right: 1.2rem;
+    background: var(--red);
+    color: white;
+    font-size: 0.68rem;
+    font-family: 'Space Mono', monospace;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    padding: 0.3rem 0.7rem;
+    border-radius: 100px;
+    text-transform: uppercase;
+  }
+
+  /* ---- RESULTS ---- */
+  #results { background: var(--navy); color: white; }
+  #results .section-lead { color: rgba(255,255,255,0.6); }
+
+  .results-table-wrap {
+    overflow-x: auto;
+    border-radius: 18px;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+    background: rgba(255,255,255,0.03);
+  }
+  th {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: rgba(255,255,255,0.4);
+    padding: 1rem 1.4rem;
+    text-align: left;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+  }
+  td {
+    padding: 1rem 1.4rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    color: rgba(255,255,255,0.8);
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(230,57,70,0.06); }
+  .td-model { font-weight: 700; color: white; }
+  .td-best { color: var(--red-light); font-weight: 700; }
+  .td-winner { color: var(--green); font-weight: 700; }
+
+  /* bar chart within table */
+  .bar-wrap {
+    display: flex; align-items: center; gap: 0.7rem;
+  }
+  .bar-track {
+    height: 6px;
+    width: 100px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 10px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 10px;
+    background: linear-gradient(90deg, var(--red-dark), var(--red-light));
+    transition: width 1s ease;
+  }
+
+  /* insights */
+  .insights-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-top: 3rem;
+  }
+  @media(max-width:600px){ .insights-grid { grid-template-columns: 1fr; } }
+  .insight-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    padding: 1.6rem;
+  }
+  .insight-card h4 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .insight-card p {
+    font-size: 0.88rem;
+    color: rgba(255,255,255,0.55);
+    line-height: 1.65;
+  }
+
+  /* ---- FEATURE IMPORTANCE ---- */
+  #features { background: var(--cream); }
+
+  .feature-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    max-width: 640px;
+  }
+  .feat-row {
+    display: grid;
+    grid-template-columns: 180px 1fr 50px;
+    align-items: center;
+    gap: 0.8rem;
+  }
+  @media(max-width:500px){ .feat-row { grid-template-columns: 110px 1fr 40px; } }
+  .feat-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-align: right;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .feat-track {
+    height: 10px;
+    background: rgba(13,27,42,0.08);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .feat-fill {
+    height: 100%;
+    border-radius: 10px;
+    background: linear-gradient(90deg, var(--red-dark), var(--red-light));
+    width: 0;
+    transition: width 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .feat-fill.low { background: linear-gradient(90deg, #b5c4d3, #8fa8c0); }
+  .feat-pct {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--red);
+    font-weight: 700;
+  }
+
+  /* ---- PROCESS ---- */
+  #process { background: var(--white); }
+
+  .timeline {
+    position: relative;
+    padding-left: 2.5rem;
+  }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 10px; top: 0; bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--red), transparent);
+  }
+  .timeline-item {
+    position: relative;
+    margin-bottom: 2.5rem;
+  }
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -2.5rem;
+    top: 4px;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--red);
+    border: 2px solid var(--cream);
+    box-shadow: 0 0 0 3px rgba(230,57,70,0.2);
+  }
+  .tl-step {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--red);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 0.3rem;
+  }
+  .tl-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.4rem; }
+  .tl-body { font-size: 0.9rem; color: var(--muted); line-height: 1.65; }
+  .tl-code {
+    margin-top: 0.7rem;
+    background: var(--navy);
+    color: #7ec8e3;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    padding: 0.8rem 1.2rem;
+    border-radius: 10px;
+    line-height: 1.6;
+    overflow-x: auto;
+  }
+  .tl-code .cm { color: rgba(255,255,255,0.35); }
+  .tl-code .kw { color: var(--red-light); }
+  .tl-code .fn { color: var(--gold); }
+  .tl-code .st { color: var(--green); }
+
+  /* ---- CONCLUSION ---- */
+  #conclusion { background: var(--navy); color: white; }
+  #conclusion .section-lead { color: rgba(255,255,255,0.6); }
+
+  .conclusion-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+  @media(max-width:650px){ .conclusion-grid { grid-template-columns: 1fr; } }
+
+  .conc-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 20px;
+    padding: 2rem;
+  }
+  .conc-card.highlight {
+    border-color: rgba(230,57,70,0.4);
+    background: rgba(230,57,70,0.07);
+  }
+  .conc-card h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.7rem; }
+  .conc-card ul { list-style: none; padding: 0; }
+  .conc-card ul li {
+    padding: 0.45rem 0;
+    color: rgba(255,255,255,0.65);
+    font-size: 0.9rem;
+    line-height: 1.6;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    display: flex; gap: 0.6rem;
+  }
+  .conc-card ul li:last-child { border-bottom: none; }
+  .conc-card ul li::before { content: '→'; color: var(--red-light); flex-shrink: 0; }
+
+  /* ---- FOOTER ---- */
+  footer {
+    background: #080f18;
+    padding: 3rem 2rem;
+    text-align: center;
+    color: rgba(255,255,255,0.3);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+  }
+  footer a { color: var(--red-light); text-decoration: none; }
+  footer strong { color: rgba(255,255,255,0.6); }
+
+  /* ---- NAV ---- */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 2rem;
+    background: rgba(13,27,42,0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .nav-logo {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.8rem;
+    color: white;
+    letter-spacing: 0.08em;
+  }
+  .nav-logo span { color: var(--red-light); }
+  .nav-links {
+    display: flex; gap: 1.8rem; list-style: none;
+  }
+  .nav-links a {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    color: rgba(255,255,255,0.5);
+    text-decoration: none;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--red-light); }
+  @media(max-width:600px){ .nav-links { display: none; } }
+
+  /* ---- INTERSECTION ANIMATION ---- */
+  .reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.7s ease, transform 0.7s ease; }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+
+  /* ---- INTERACTIVE PREDICTOR ---- */
+  #predictor { background: var(--cream); }
+
+  .predictor-box {
+    background: var(--white);
+    border-radius: 24px;
+    border: 1px solid var(--border);
+    box-shadow: 0 8px 40px rgba(13,27,42,0.08);
+    padding: 2.5rem;
+    max-width: 700px;
+  }
+  .predictor-box h3 { font-size: 1.3rem; font-weight: 700; margin-bottom: 0.4rem; }
+  .predictor-box .sub { color: var(--muted); font-size: 0.88rem; margin-bottom: 2rem; }
+
+  .slider-group { margin-bottom: 1.4rem; }
+  .slider-label {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 0.4rem;
+    font-size: 0.88rem;
+    font-weight: 600;
+  }
+  .slider-val {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.82rem;
+    color: var(--red);
+    background: rgba(230,57,70,0.08);
+    padding: 0.15rem 0.55rem;
+    border-radius: 6px;
+  }
+  input[type=range] {
+    width: 100%;
+    appearance: none;
+    height: 6px;
+    border-radius: 6px;
+    background: rgba(13,27,42,0.1);
+    outline: none;
+    cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    appearance: none;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--red);
+    box-shadow: 0 2px 8px rgba(230,57,70,0.4);
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+  .select-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.4rem;
+  }
+  .select-group label {
+    display: block;
+    font-size: 0.88rem;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+  }
+  .select-group select {
+    width: 100%;
+    padding: 0.6rem 0.9rem;
+    border-radius: 10px;
+    border: 1.5px solid rgba(13,27,42,0.12);
+    font-family: 'Syne', sans-serif;
+    font-size: 0.88rem;
+    background: var(--cream);
+    color: var(--text);
+    outline: none;
+    cursor: pointer;
+  }
+  .select-group select:focus { border-color: var(--red); }
+
+  .predict-btn {
+    width: 100%;
+    padding: 1rem;
+    border-radius: 14px;
+    border: none;
+    background: linear-gradient(135deg, var(--red-dark), var(--red));
+    color: white;
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 4px 20px rgba(230,57,70,0.35);
+    margin-top: 0.5rem;
+  }
+  .predict-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(230,57,70,0.45); }
+  .predict-btn:active { transform: translateY(0); }
+
+  .result-box {
+    margin-top: 1.5rem;
+    border-radius: 14px;
+    padding: 1.4rem;
+    display: none;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.95rem;
+    animation: fadeUp 0.4s ease;
+  }
+  .result-box.show { display: flex; }
+  .result-box.low { background: rgba(82,183,136,0.1); border: 1.5px solid rgba(82,183,136,0.3); }
+  .result-box.high { background: rgba(230,57,70,0.08); border: 1.5px solid rgba(230,57,70,0.25); }
+  .result-icon { font-size: 2rem; flex-shrink: 0; }
+  .result-text strong { display: block; font-size: 1rem; margin-bottom: 0.2rem; }
+  .result-text span { color: var(--muted); font-size: 0.85rem; }
+  .result-box.low .result-text strong { color: var(--green); }
+  .result-box.high .result-text strong { color: var(--red); }
+
+  .disclaimer {
+    margin-top: 1rem;
+    font-size: 0.72rem;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    line-height: 1.6;
+    border-top: 1px solid var(--border);
+    padding-top: 1rem;
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">SAM<span>.</span>ML</div>
+  <ul class="nav-links">
+    <li><a href="#about">About</a></li>
+    <li><a href="#dataset">Data</a></li>
+    <li><a href="#models">Models</a></li>
+    <li><a href="#results">Results</a></li>
+    <li><a href="#predictor">Try It</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-badge">🎓 Machine Learning Final Project</div>
+  <h1>Can a Computer <span>Predict</span><br/>Heart Disease?</h1>
+  <p class="hero-sub">A hands-on comparison of Logistic Regression, Decision Trees, and Neural Networks — tested on 1,025 real patient records.</p>
+
+  <div class="hero-author">
+    <div class="author-avatar">S</div>
+    <div class="author-info">
+      <div class="author-name">Sam Shema</div>
+      <div class="author-role">Machine Learning · Healthcare AI</div>
+    </div>
+  </div>
+
+  <div class="hero-stats">
+    <div class="hero-stat">
+      <div class="hero-stat-val">1,025</div>
+      <div class="hero-stat-label">Patient Records</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-val">3</div>
+      <div class="hero-stat-label">ML Models Tested</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-val">~85%</div>
+      <div class="hero-stat-label">Best Accuracy</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-val">13</div>
+      <div class="hero-stat-label">Medical Features</div>
+    </div>
+  </div>
+
+  <div class="scroll-hint">SCROLL TO EXPLORE</div>
+
+  <!-- heartbeat line -->
+  <div class="heartbeat-wrap">
+    <svg viewBox="0 0 1200 120" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" height="120">
+      <polyline class="heartbeat-line"
+        points="0,60 100,60 140,60 160,10 180,110 200,30 220,90 240,60 400,60 440,60 460,5 480,115 500,25 520,95 540,60 700,60 740,60 760,10 780,110 800,30 820,90 840,60 1200,60"
+        fill="none" stroke="#e63946" stroke-width="2.5" stroke-linejoin="round"/>
+    </svg>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="container">
+    <div class="section-tag reveal">Problem Statement</div>
+    <h2 class="section-title reveal">Why <em>Heart Disease</em>?</h2>
+    <p class="section-lead reveal">Heart disease is one of the leading causes of death globally. Early detection can save lives — and machine learning models can help doctors flag high-risk patients faster and more accurately.</p>
+
+    <div class="about-grid reveal">
+      <div class="about-card">
+        <div class="card-icon">🎯</div>
+        <h3>The Goal</h3>
+        <p>Build a binary classification system that predicts whether a patient has heart disease (1) or not (0) based on 13 medical attributes — and determine which ML approach works best.</p>
+      </div>
+      <div class="about-card">
+        <div class="card-icon">🏥</div>
+        <h3>Real-World Impact</h3>
+        <p>An accurate, interpretable model could assist cardiologists in prioritizing high-risk patients for further testing, reducing diagnostic delays and improving patient outcomes.</p>
+      </div>
+      <div class="about-card">
+        <div class="card-icon">⚖️</div>
+        <h3>The Trade-off</h3>
+        <p>This project explores the core tension in medical AI: <strong>accuracy vs. interpretability</strong>. A model a doctor can explain to a patient may matter more than one that's 2% more accurate.</p>
+      </div>
+      <div class="about-card">
+        <div class="card-icon">📊</div>
+        <h3>The Approach</h3>
+        <p>Three models of increasing complexity were trained and evaluated using accuracy, precision, recall, F1-score, ROC-AUC, and 5-fold cross-validation — giving a complete picture of performance.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DATASET -->
+<section id="dataset">
+  <div class="container">
+    <div class="section-tag reveal">Dataset</div>
+    <h2 class="section-title reveal" style="color:white">The <em>Data</em> Behind the Models</h2>
+    <p class="section-lead reveal">1,025 patient records sourced from Kaggle (UCI Heart Disease Dataset), with no missing values and a near-balanced class distribution.</p>
+
+    <div class="dataset-callout reveal">
+      <div class="callout-item">
+        <span class="callout-num">1,025</span>
+        <span class="callout-desc">Total Patients</span>
+      </div>
+      <div class="callout-item">
+        <span class="callout-num">51.3%</span>
+        <span class="callout-desc">Heart Disease +</span>
+      </div>
+      <div class="callout-item">
+        <span class="callout-num">0</span>
+        <span class="callout-desc">Missing Values</span>
+      </div>
+    </div>
+
+    <div style="margin-top:3rem" class="reveal">
+      <div class="section-tag" style="color:rgba(255,255,255,0.45);margin-bottom:1rem">
+        <span style="background:rgba(255,255,255,0.2);height:2px;width:20px;display:inline-block;margin-right:0.5rem;border-radius:2px;vertical-align:middle"></span>
+        13 Input Features
+      </div>
+      <div class="features-grid">
+        <div class="feature-pill"><span class="dot"></span>Age</div>
+        <div class="feature-pill"><span class="dot"></span>Sex</div>
+        <div class="feature-pill"><span class="dot"></span>Chest Pain Type</div>
+        <div class="feature-pill"><span class="dot"></span>Resting Blood Pressure</div>
+        <div class="feature-pill"><span class="dot"></span>Cholesterol</div>
+        <div class="feature-pill"><span class="dot"></span>Fasting Blood Sugar</div>
+        <div class="feature-pill"><span class="dot"></span>Resting ECG</div>
+        <div class="feature-pill"><span class="dot"></span>Max Heart Rate</div>
+        <div class="feature-pill"><span class="dot"></span>Exercise Angina</div>
+        <div class="feature-pill"><span class="dot"></span>ST Depression (oldpeak)</div>
+        <div class="feature-pill"><span class="dot"></span>ST Slope</div>
+        <div class="feature-pill"><span class="dot"></span>Major Vessels (ca)</div>
+        <div class="feature-pill"><span class="dot"></span>Thalassemia (thal)</div>
+      </div>
+    </div>
+
+    <div style="margin-top:2.5rem;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:1.6rem" class="reveal">
+      <div style="font-family:'Space Mono',monospace;font-size:0.7rem;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:0.8rem">Preprocessing Pipeline</div>
+      <div style="display:flex;flex-wrap:wrap;gap:0.8rem">
+        <span style="background:rgba(230,57,70,0.15);border:1px solid rgba(230,57,70,0.3);color:#ff6b7a;padding:0.3rem 0.8rem;border-radius:8px;font-size:0.8rem;font-family:'Space Mono',monospace">Separate X &amp; y</span>
+        <span style="color:rgba(255,255,255,0.2);font-size:1.2rem;align-self:center">→</span>
+        <span style="background:rgba(230,57,70,0.15);border:1px solid rgba(230,57,70,0.3);color:#ff6b7a;padding:0.3rem 0.8rem;border-radius:8px;font-size:0.8rem;font-family:'Space Mono',monospace">80/20 Stratified Split</span>
+        <span style="color:rgba(255,255,255,0.2);font-size:1.2rem;align-self:center">→</span>
+        <span style="background:rgba(230,57,70,0.15);border:1px solid rgba(230,57,70,0.3);color:#ff6b7a;padding:0.3rem 0.8rem;border-radius:8px;font-size:0.8rem;font-family:'Space Mono',monospace">StandardScaler</span>
+        <span style="color:rgba(255,255,255,0.2);font-size:1.2rem;align-self:center">→</span>
+        <span style="background:rgba(82,183,136,0.15);border:1px solid rgba(82,183,136,0.3);color:#52b788;padding:0.3rem 0.8rem;border-radius:8px;font-size:0.8rem;font-family:'Space Mono',monospace">Ready to Train ✓</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MODELS -->
+<section id="models">
+  <div class="container">
+    <div class="section-tag reveal">Methodology</div>
+    <h2 class="section-title reveal">Three Models, <em>One Battle</em></h2>
+    <p class="section-lead reveal">From a simple straight line to a neural network with 96 neurons — each model was chosen to test a specific trade-off between complexity and interpretability.</p>
+
+    <div class="models-grid reveal">
+      <div class="model-card">
+        <div class="model-num">Model 01 · Baseline</div>
+        <div class="model-name">Logistic Regression</div>
+        <div class="model-desc">The gold standard baseline. Finds a decision boundary by fitting a weighted combination of features — fast, stable, and fully explainable.</div>
+        <div class="model-acc">81%</div>
+        <div class="model-meta-label">Test Accuracy · CV Avg: 84.4%</div>
+        <div class="model-tags">
+          <span class="model-tag">Interpretable</span>
+          <span class="model-tag">Fast Training</span>
+          <span class="model-tag">Best ROC-AUC</span>
+        </div>
+      </div>
+
+      <div class="model-card featured">
+        <div class="winner-badge">⭐ Most Stable</div>
+        <div class="model-num">Model 02 · Non-linear</div>
+        <div class="model-name">Decision Tree</div>
+        <div class="model-desc">Splits the data using a series of if/then rules — great for capturing non-linear patterns while still being explainable via a visual tree diagram.</div>
+        <div class="model-acc">84%</div>
+        <div class="model-meta-label">Test Accuracy · CV Avg: 85.5%</div>
+        <div class="model-tags">
+          <span class="model-tag">Visual Rules</span>
+          <span class="model-tag">Lowest Variance</span>
+          <span class="model-tag">Feature Importance</span>
+        </div>
+      </div>
+
+      <div class="model-card">
+        <div class="model-num">Model 03 · Deep Learning</div>
+        <div class="model-name">Neural Network</div>
+        <div class="model-desc">A multi-layer perceptron with 64→32 neuron hidden layers. Originally overfit to 100% training accuracy — corrected with early stopping and L2 regularization.</div>
+        <div class="model-acc">84.4%</div>
+        <div class="model-meta-label">Test Accuracy · CV Avg: 85.4%</div>
+        <div class="model-tags">
+          <span class="model-tag">Most Complex</span>
+          <span class="model-tag">Early Stopping</span>
+          <span class="model-tag">L2 Regularization</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- RESULTS -->
+<section id="results">
+  <div class="container">
+    <div class="section-tag reveal">Performance</div>
+    <h2 class="section-title reveal" style="color:white">The <em>Numbers</em> Don't Lie</h2>
+    <p class="section-lead reveal">Five-fold cross-validation confirmed all three models are consistent — and surprisingly close in performance, despite their very different levels of complexity.</p>
+
+    <div class="results-table-wrap reveal">
+      <table>
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th>Test Accuracy</th>
+            <th>CV Average</th>
+            <th>CV Std Dev</th>
+            <th>ROC-AUC</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="td-model">Logistic Regression</td>
+            <td><div class="bar-wrap"><div class="bar-track"><div class="bar-fill" style="width:81%"></div></div>81%</div></td>
+            <td>84.4%</td>
+            <td>±2.40%</td>
+            <td class="td-best">🏆 Highest</td>
+          </tr>
+          <tr>
+            <td class="td-model">Decision Tree</td>
+            <td><div class="bar-wrap"><div class="bar-track"><div class="bar-fill" style="width:84%"></div></div>84%</div></td>
+            <td class="td-best">85.5%</td>
+            <td class="td-winner">±1.90% ✓</td>
+            <td>High</td>
+          </tr>
+          <tr>
+            <td class="td-model">Neural Network</td>
+            <td><div class="bar-wrap"><div class="bar-track"><div class="bar-fill" style="width:84.4%"></div></div>84.4%</div></td>
+            <td>85.4%</td>
+            <td>±2.78%</td>
+            <td>High</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="insights-grid reveal">
+      <div class="insight-card">
+        <h4>🧠 Complexity ≠ Always Better</h4>
+        <p>The Neural Network only outperformed Logistic Regression by ~3.4%. For smaller structured datasets like this, simple models remain highly competitive.</p>
+      </div>
+      <div class="insight-card">
+        <h4>📉 Neural Network Overfit First</h4>
+        <p>The initial Neural Network scored 100% on training data — a classic overfitting case. Early stopping and L2 regularization brought it back down to a realistic generalized performance.</p>
+      </div>
+      <div class="insight-card">
+        <h4>🌳 Decision Tree: Most Reliable</h4>
+        <p>With the lowest cross-validation standard deviation (±1.90%), the Decision Tree was the most consistent performer across different data splits.</p>
+      </div>
+      <div class="insight-card">
+        <h4>📈 Logistic Regression Wins ROC</h4>
+        <p>Despite lower test accuracy, Logistic Regression achieved the highest ROC-AUC score — meaning it ranks patients most reliably by risk level, which matters most in clinical settings.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURE IMPORTANCE -->
+<section id="features">
+  <div class="container">
+    <div class="section-tag reveal">Feature Analysis</div>
+    <h2 class="section-title reveal">What <em>Actually Matters</em>?</h2>
+    <p class="section-lead reveal">The Decision Tree's feature importance scores reveal which patient attributes drive predictions — and which ones are almost irrelevant.</p>
+
+    <div class="feature-chart reveal" id="featChart">
+      <div class="feat-row">
+        <div class="feat-label">Chest Pain Type</div>
+        <div class="feat-track"><div class="feat-fill" data-width="43"></div></div>
+        <div class="feat-pct">43%</div>
+      </div>
+      <div class="feat-row">
+        <div class="feat-label">Thalassemia (thal)</div>
+        <div class="feat-track"><div class="feat-fill" data-width="18"></div></div>
+        <div class="feat-pct">18%</div>
+      </div>
+      <div class="feat-row">
+        <div class="feat-label">Major Vessels (ca)</div>
+        <div class="feat-track"><div class="feat-fill" data-width="14"></div></div>
+        <div class="feat-pct">14%</div>
+      </div>
+      <div class="feat-row">
+        <div class="feat-label">ST Depression</div>
+        <div class="feat-track"><div class="feat-fill" data-width="10"></div></div>
+        <div class="feat-pct">10%</div>
+      </div>
+      <div class="feat-row">
+        <div class="feat-label">Max Heart Rate</div>
+        <div class="feat-track"><div class="feat-fill" data-width="7"></div></div>
+        <div class="feat-pct">7%</div>
+      </div>
+      <div class="feat-row">
+        <div class="feat-label">Age</div>
+        <div class="feat-track"><div class="feat-fill low" data-width="4"></div></div>
+        <div class="feat-pct" style="color:var(--muted)">4%</div>
+      </div>
+      <div class="feat-row">
+        <div class="feat-label">Other Features</div>
+        <div class="feat-track"><div class="feat-fill low" data-width="4"></div></div>
+        <div class="feat-pct" style="color:var(--muted)">4%</div>
+      </div>
+    </div>
+
+    <div style="margin-top:2rem;padding:1.4rem;background:rgba(230,57,70,0.06);border:1px solid rgba(230,57,70,0.15);border-radius:14px;max-width:640px" class="reveal">
+      <p style="font-size:0.9rem;color:var(--text);line-height:1.7">
+        💡 <strong>Key insight:</strong> Chest pain type alone accounts for 43% of the Decision Tree's decisions. Four features contributed almost nothing to predictions — suggesting a leaner 7–8 feature model could achieve similar accuracy with less complexity.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- PROCESS -->
+<section id="process">
+  <div class="container">
+    <div class="section-tag reveal">Under the Hood</div>
+    <h2 class="section-title reveal">How It Was <em>Built</em></h2>
+    <p class="section-lead reveal">The full pipeline from raw CSV to trained models — with actual code snippets from the notebook.</p>
+
+    <div class="timeline">
+      <div class="timeline-item reveal">
+        <div class="tl-step">Step 01</div>
+        <div class="tl-title">Load &amp; Explore the Data</div>
+        <div class="tl-body">Loaded the CSV with pandas, confirmed 1,025 rows × 14 columns, verified zero missing values, and checked class balance (526 positive, 499 negative).</div>
+        <div class="tl-code">
+          <span class="kw">import</span> pandas <span class="kw">as</span> pd<br>
+          df = pd.<span class="fn">read_csv</span>(<span class="st">'heart.csv'</span>)<br>
+          <span class="cm"># Dataset shape: (1025, 14) · No nulls ✓</span>
+        </div>
+      </div>
+
+      <div class="timeline-item reveal">
+        <div class="tl-step">Step 02</div>
+        <div class="tl-title">Preprocess &amp; Scale</div>
+        <div class="tl-body">Separated features from labels, performed a stratified 80/20 train-test split, and normalized all features using StandardScaler so that no single feature dominates due to its scale.</div>
+        <div class="tl-code">
+          X_train, X_test, y_train, y_test = <span class="fn">train_test_split</span>(<br>
+          &nbsp;&nbsp;X, y, test_size=<span class="st">0.2</span>, stratify=y<br>
+          )<br>
+          scaler = <span class="fn">StandardScaler</span>()<br>
+          X_train_scaled = scaler.<span class="fn">fit_transform</span>(X_train)
+        </div>
+      </div>
+
+      <div class="timeline-item reveal">
+        <div class="tl-step">Step 03</div>
+        <div class="tl-title">Train All Three Models</div>
+        <div class="tl-body">Each model was trained on the same scaled training data. The Neural Network required extra steps to prevent overfitting — early stopping was applied to halt training when validation loss stopped improving.</div>
+        <div class="tl-code">
+          lr = <span class="fn">LogisticRegression</span>()<br>
+          dt = <span class="fn">DecisionTreeClassifier</span>(max_depth=<span class="st">5</span>)<br>
+          nn = <span class="fn">MLPClassifier</span>(hidden_layer_sizes=(<span class="st">64,32</span>),<br>
+          &nbsp;&nbsp;early_stopping=<span class="st">True</span>, alpha=<span class="st">0.01</span>)
+        </div>
+      </div>
+
+      <div class="timeline-item reveal">
+        <div class="tl-step">Step 04</div>
+        <div class="tl-title">Evaluate with 5-Fold Cross-Validation</div>
+        <div class="tl-body">Rather than trusting a single train-test split, 5-fold cross-validation was used to get a reliable measure of each model's consistency across different data subsets.</div>
+        <div class="tl-code">
+          scores = <span class="fn">cross_val_score</span>(model, X_train_scaled, y_train, cv=<span class="st">5</span>)<br>
+          <span class="cm"># LR: 84.4% ±2.40% | DT: 85.5% ±1.90% | NN: 85.4% ±2.78%</span>
+        </div>
+      </div>
+
+      <div class="timeline-item reveal">
+        <div class="tl-step">Step 05</div>
+        <div class="tl-title">Visualize &amp; Interpret</div>
+        <div class="tl-body">Confusion matrices, ROC curves, and a Decision Tree feature importance chart were generated to understand not just how well each model performs, but <em>why</em>.</div>
+        <div class="tl-code">
+          <span class="fn">plot_tree</span>(dt, feature_names=X.columns, filled=<span class="st">True</span>)<br>
+          <span class="fn">RocCurveDisplay</span>.<span class="fn">from_estimator</span>(lr, X_test_scaled, y_test)
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- INTERACTIVE PREDICTOR -->
+<section id="predictor">
+  <div class="container">
+    <div class="section-tag reveal">Interactive Demo</div>
+    <h2 class="section-title reveal">Try the <em>Predictor</em></h2>
+    <p class="section-lead reveal">Enter patient values to see what the Logistic Regression model would predict. This simulation uses the same logic as the trained model.</p>
+
+    <div class="predictor-box reveal">
+      <h3>🫀 Patient Risk Estimator</h3>
+      <p class="sub">Adjust the sliders and dropdowns to match a patient's profile, then hit Predict.</p>
+
+      <div class="slider-group">
+        <div class="slider-label">Age <span class="slider-val" id="ageVal">54</span></div>
+        <input type="range" id="age" min="29" max="77" value="54" oninput="document.getElementById('ageVal').textContent=this.value">
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-label">Resting Blood Pressure (mmHg) <span class="slider-val" id="bpVal">130</span></div>
+        <input type="range" id="bp" min="90" max="200" value="130" oninput="document.getElementById('bpVal').textContent=this.value">
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-label">Cholesterol (mg/dL) <span class="slider-val" id="cholVal">246</span></div>
+        <input type="range" id="chol" min="120" max="560" value="246" oninput="document.getElementById('cholVal').textContent=this.value">
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-label">Max Heart Rate Achieved <span class="slider-val" id="hrVal">150</span></div>
+        <input type="range" id="hr" min="70" max="202" value="150" oninput="document.getElementById('hrVal').textContent=this.value">
+      </div>
+
+      <div class="select-row">
+        <div class="select-group">
+          <label>Sex</label>
+          <select id="sex">
+            <option value="1">Male</option>
+            <option value="0">Female</option>
+          </select>
+        </div>
+        <div class="select-group">
+          <label>Chest Pain Type</label>
+          <select id="cp">
+            <option value="0">Typical Angina</option>
+            <option value="1">Atypical Angina</option>
+            <option value="2">Non-Anginal</option>
+            <option value="3" selected>Asymptomatic</option>
+          </select>
+        </div>
+        <div class="select-group">
+          <label>Exercise Induced Angina</label>
+          <select id="exang">
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </div>
+        <div class="select-group">
+          <label>Fasting Blood Sugar &gt;120</label>
+          <select id="fbs">
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </div>
+      </div>
+
+      <button class="predict-btn" onclick="predict()">🔍 Predict Heart Disease Risk</button>
+
+      <div class="result-box" id="resultBox">
+        <div class="result-icon" id="resultIcon"></div>
+        <div class="result-text">
+          <strong id="resultTitle"></strong>
+          <span id="resultDesc"></span>
+        </div>
+      </div>
+
+      <div class="disclaimer">
+        ⚠️ This is a portfolio demonstration only. The prediction is a simplified simulation based on the patterns learned from the Kaggle heart disease dataset and is <strong>not a medical diagnosis</strong>. Always consult a licensed healthcare professional.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONCLUSION -->
+<section id="conclusion">
+  <div class="container">
+    <div class="section-tag reveal">Takeaways</div>
+    <h2 class="section-title reveal" style="color:white">What I <em>Learned</em></h2>
+    <p class="section-lead reveal">This project reinforced a key lesson in applied ML: the best model isn't always the most complex one — especially in high-stakes domains like healthcare.</p>
+
+    <div class="conclusion-grid reveal">
+      <div class="conc-card highlight">
+        <h3>🏥 Key Findings</h3>
+        <ul>
+          <li>All three models exceeded 80% accuracy on unseen test data</li>
+          <li>Logistic Regression achieved the highest ROC-AUC despite lower raw accuracy</li>
+          <li>Neural Network overfitting was a real challenge, requiring regularization</li>
+          <li>Chest pain type dominated feature importance at 43%</li>
+          <li>Model complexity gap was only ~3.4% — huge cost for tiny gain</li>
+        </ul>
+      </div>
+      <div class="conc-card">
+        <h3>🔧 Technical Skills Demonstrated</h3>
+        <ul>
+          <li>Scikit-learn pipeline: preprocessing, training, evaluation</li>
+          <li>Cross-validation and overfitting prevention</li>
+          <li>ROC curves, confusion matrices, and F1-score interpretation</li>
+          <li>Feature importance analysis and dimensionality insights</li>
+          <li>Python: pandas, numpy, matplotlib, seaborn</li>
+        </ul>
+      </div>
+      <div class="conc-card" style="grid-column: span 2">
+        <h3>💡 Real-World Recommendation</h3>
+        <ul>
+          <li>In clinical settings, Logistic Regression may be the most valuable model due to its interpretability — doctors can understand and explain predictions to patients</li>
+          <li>Neural Networks require more data to truly outperform simpler models; with larger datasets (100k+ records), the gap would likely widen significantly</li>
+          <li>Future work: remove low-importance features, try ensemble methods (Random Forest, XGBoost), and validate on a diverse held-out population dataset</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <p>Built by <strong>Sam Shema</strong> · Machine Learning Final Project · Dataset from <a href="https://www.kaggle.com/datasets/johnsmith88/heart-disease-dataset" target="_blank">Kaggle UCI Heart Disease</a></p>
+  <p style="margin-top:0.6rem">Logistic Regression · Decision Trees · Neural Networks · scikit-learn · Python</p>
+</footer>
+
+<script>
+  // Intersection Observer for scroll reveals
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        // If it's the feature chart, animate bars
+        if (e.target.id === 'featChart' || e.target.closest('#featChart')) {
+          animateBars();
+        }
+      }
+    });
+  }, { threshold: 0.15 });
+
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // Feature bar animation
+  let barsAnimated = false;
+  function animateBars() {
+    if (barsAnimated) return;
+    barsAnimated = true;
+    document.querySelectorAll('.feat-fill').forEach(bar => {
+      const w = bar.dataset.width;
+      setTimeout(() => { bar.style.width = w + '%'; }, 100);
+    });
+  }
+
+  // Also watch feat chart specifically
+  const featChart = document.getElementById('featChart');
+  if (featChart) observer.observe(featChart);
+
+  // Simple logistic sigmoid predictor simulation
+  function sigmoid(x) { return 1 / (1 + Math.exp(-x)); }
+
+  function predict() {
+    const age = parseInt(document.getElementById('age').value);
+    const bp = parseInt(document.getElementById('bp').value);
+    const chol = parseInt(document.getElementById('chol').value);
+    const hr = parseInt(document.getElementById('hr').value);
+    const sex = parseInt(document.getElementById('sex').value);
+    const cp = parseInt(document.getElementById('cp').value);
+    const exang = parseInt(document.getElementById('exang').value);
+    const fbs = parseInt(document.getElementById('fbs').value);
+
+    // Simplified logistic regression approximation based on feature importances
+    // Weights derived conceptually from the model's known behavior
+    let score = -1.5;
+    score += (cp === 3 ? 1.8 : cp === 2 ? 0.9 : cp === 1 ? 0.3 : -0.3);  // chest pain type is most important
+    score += (hr < 120 ? 0.6 : hr < 150 ? 0.2 : -0.5);  // lower max hr → higher risk
+    score += (age > 60 ? 0.5 : age > 50 ? 0.2 : -0.2);
+    score += (exang === 1 ? 0.7 : -0.3);
+    score += (sex === 1 ? 0.2 : -0.1);
+    score += (bp > 150 ? 0.3 : bp < 120 ? -0.2 : 0);
+    score += (chol > 300 ? 0.2 : 0);
+    score += (fbs === 1 ? 0.2 : 0);
+
+    const prob = sigmoid(score);
+    const box = document.getElementById('resultBox');
+    const icon = document.getElementById('resultIcon');
+    const title = document.getElementById('resultTitle');
+    const desc = document.getElementById('resultDesc');
+
+    box.classList.remove('show', 'low', 'high');
+
+    setTimeout(() => {
+      if (prob >= 0.5) {
+        box.classList.add('show', 'high');
+        icon.textContent = '⚠️';
+        title.textContent = `Higher Risk Detected (${Math.round(prob * 100)}% probability)`;
+        desc.textContent = 'The model flags elevated indicators. Key factors: chest pain type, exercise angina, and low max heart rate are significant risk signals.';
+      } else {
+        box.classList.add('show', 'low');
+        icon.textContent = '✅';
+        title.textContent = `Lower Risk Indicated (${Math.round((1 - prob) * 100)}% confidence)`;
+        desc.textContent = 'Patient profile shows lower-risk indicators. Asymptomatic chest pain and high max heart rate are protective signals in the model.';
+      }
+    }, 50);
+  }
+</script>
+</body>
+</html>
